@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证码系统</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .iframe-content {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        .captcha-container {
+            margin: 20px 0;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+    <script>
+        let sessionId = null;
+
+        // 从 URL 获取会话 ID
+        function getSessionIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('session');
+        }
+
+        async function generateCaptcha() {
+            sessionId = getSessionIdFromUrl();
+            if (!sessionId) {
+                alert('未提供会话 ID');
+                return;
+            }
+            const response = await fetch(`/captcha/generate/${sessionId}`, { method: 'POST' });
+            const data = await response.json();
+            document.getElementById('captcha-image').src = `data:image/png;base64,${data.captcha_image}`;
+        }
+
+        async function verifyCaptcha() {
+            sessionId = getSessionIdFromUrl();
+            if (!sessionId) {
+                alert('未提供会话 ID');
+                return;
+            }
+            const captchaText = document.getElementById('captcha-text').value;
+            const response = await fetch(`/captcha/verify/${sessionId}/${captchaText}`);
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // 验证成功后自动关闭窗口
+                window.close();
+            } else {
+                alert(result.message);
+                // 验证失败后重新生成验证码
+                generateCaptcha();
+            }
+        }
+
+        // 页面加载时生成验证码
+        window.onload = generateCaptcha;
+    </script>
+</head>
+<body>
+    <div class="iframe-content">
+        <h1>验证码系统</h1>
+        <div onclick="generateCaptcha()" class="captcha-container">
+            <img id="captcha-image" alt="Captcha Image">
+        </div>
+        <div class="input-group">
+            <input type="text" id="captcha-text" placeholder="请输入计算结果">
+            <button onclick="verifyCaptcha()">验证</button>
+        </div>
+    </div>
+</body>
+</html>

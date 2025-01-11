@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证码系统</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .success-mark {
+            color: green;
+            font-size: 48px;
+            display: none;
+        }
+        .verification-status {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .start-verification {
+            display: block;
+            margin: 0 auto;
+            padding: 10px 20px;
+        }
+    </style>
+    <script>
+        let sessionId = null;
+        let captchaWindow = null;
+        let statusCheckInterval = null;
+
+        async function createSession() {
+            const response = await fetch('/captcha/session', { method: 'POST' });
+            const data = await response.json();
+            sessionId = data.session_id;
+            return sessionId;
+        }
+
+        function openCaptchaWindow() {
+            if (!sessionId) {
+                alert('请先创建会话');
+                return;
+            }
+            
+            // 关闭之前可能打开的窗口
+            if (captchaWindow && !captchaWindow.closed) {
+                captchaWindow.close();
+            }
+
+            // 打开新窗口
+            captchaWindow = window.open(`iframe.html?session=${sessionId}`, 'CaptchaVerification', 'width=400,height=500');
+            
+            // 开始轮询会话状态
+            startStatusPolling();
+        }
+
+        function startStatusPolling() {
+            // 清除之前的轮询
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+
+            statusCheckInterval = setInterval(async () => {
+                if (!sessionId) return;
+
+                try {
+                    const response = await fetch(`/captcha/session/${sessionId}/status`);
+                    const status = await response.json();
+
+                    if (status.verified) {
+                        // 验证成功
+                        clearInterval(statusCheckInterval);
+                        document.getElementById('success-mark').style.display = 'block';
+                        document.getElementById('start-verification').style.display = 'none';
+                        
+                        // 关闭验证窗口
+                        if (captchaWindow && !captchaWindow.closed) {
+                            captchaWindow.close();
+                        }
+                    }
+                } catch (error) {
+                    console.error('状态检查失败', error);
+                    clearInterval(statusCheckInterval);
+                }
+            }, 1000);  // 每秒轮询一次
+        }
+
+        // 初始化时创建会话
+        createSession().then(() => {
+            document.getElementById('start-verification').addEventListener('click', openCaptchaWindow);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>验证码系统</h1>
+        <button id="start-verification" class="start-verification">开始验证</button>
+        <div class="verification-status">
+            <div id="success-mark" class="success-mark">✓</div>
+        </div>
+    </div>
+</body>
+</html>
