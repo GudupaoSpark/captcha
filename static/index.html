@@ -20,10 +20,15 @@
             margin: 0 auto;
             padding: 10px 20px;
         }
+        #captcha-iframe {
+            display: none;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
     </style>
     <script>
         let sessionId = null;
-        let captchaWindow = null;
         let statusCheckInterval = null;
 
         async function createSession() {
@@ -39,13 +44,29 @@
                 return;
             }
             
-            // 关闭之前可能打开的窗口
-            if (captchaWindow && !captchaWindow.closed) {
-                captchaWindow.close();
+            // 隐藏开始验证按钮
+            document.getElementById('start-verification').style.display = 'none';
+            
+            // 移除之前的 iframe（如果存在）
+            const existingIframe = document.getElementById('captcha-iframe');
+            if (existingIframe) {
+                existingIframe.remove();
             }
 
-            // 打开新窗口
-            captchaWindow = window.open(`iframe.html?session=${sessionId}`, 'CaptchaVerification', 'width=400,height=500');
+            // 创建新的 iframe
+            const iframe = document.createElement('iframe');
+            iframe.id = 'captcha-iframe';
+            iframe.src = `iframe.html?session=${sessionId}`;
+            iframe.width = '400';
+            iframe.height = '500';
+            iframe.style.display = 'block';
+            iframe.style.margin = '20px auto';
+            
+            // 将 iframe 添加到页面
+            document.querySelector('.container').appendChild(iframe);
+            
+            // 显示 iframe
+            iframe.style.display = 'block';
             
             // 开始轮询会话状态
             startStatusPolling();
@@ -68,11 +89,11 @@
                         // 验证成功
                         clearInterval(statusCheckInterval);
                         document.getElementById('success-mark').style.display = 'block';
-                        document.getElementById('start-verification').style.display = 'none';
                         
-                        // 关闭验证窗口
-                        if (captchaWindow && !captchaWindow.closed) {
-                            captchaWindow.close();
+                        // 隐藏 iframe
+                        const iframe = document.getElementById('captcha-iframe');
+                        if (iframe) {
+                            iframe.style.display = 'none';
                         }
                     }
                 } catch (error) {
