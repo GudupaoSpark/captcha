@@ -23,6 +23,7 @@
         .captcha-container {
             margin: 20px 0;
         }
+        
     </style>
     <script>
         let sessionId = null;
@@ -74,11 +75,10 @@
         <div onclick="generateCaptcha()">
             <img id="captcha-image" alt="Captcha Image">
         </div>
-        
+        <div>
             <input type="text" id="captcha-text" placeholder="请输入计算结果">
-            
             <button onclick="verifyCaptcha()">验证</button>
-        
+        </div>
     </div>
 </body>
 </html>
