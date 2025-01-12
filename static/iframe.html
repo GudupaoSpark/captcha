@@ -23,11 +23,6 @@
         .captcha-container {
             margin: 20px 0;
         }
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
     </style>
     <script>
         let sessionId = null;
@@ -75,14 +70,15 @@
 </head>
 <body>
     <div class="iframe-content">
-        <h1>验证码系统</h1>
-        <div onclick="generateCaptcha()" class="captcha-container">
+        
+        <div onclick="generateCaptcha()">
             <img id="captcha-image" alt="Captcha Image">
         </div>
-        <div class="input-group">
+        
             <input type="text" id="captcha-text" placeholder="请输入计算结果">
+            
             <button onclick="verifyCaptcha()">验证</button>
-        </div>
+        
     </div>
 </body>
 </html>
