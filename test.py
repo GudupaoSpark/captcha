@@ -1,13 +1,16 @@
 import requests
-import webbrowser
 import time
 import threading
-import tkinter as tk
 import webview
+import json
+import traceback
+
+# 定义基础 URL
+BASE_URL = 'https://captcha.1nk.ltd'
 
 def create_session():
     """创建会话并返回会话ID"""
-    response = requests.post('http://localhost:8000/captcha/session')
+    response = requests.post(f'{BASE_URL}/captcha/session')
     return response.json()['session_id']
 
 def check_session_status(session_id, window):
@@ -17,7 +20,7 @@ def check_session_status(session_id, window):
     
     while attempts < max_attempts:
         try:
-            response = requests.get(f'http://localhost:8000/captcha/session/{session_id}/status')
+            response = requests.get(f'{BASE_URL}/captcha/session/{session_id}/status')
             status = response.json()
             
             if status['verified']:
@@ -35,16 +38,30 @@ def check_session_status(session_id, window):
         print("❌ 验证超时")
         window.destroy()
 
+def on_script_notify(message):
+    """处理 webview 脚本通知的异常处理函数"""
+    try:
+        if message is not None:
+            # 尝试解析 JSON 消息
+            parsed_message = json.loads(message)
+            print(f"收到脚本通知: {parsed_message}")
+        else:
+            print("收到空的脚本通知")
+    except Exception as e:
+        print(f"脚本通知处理错误: {e}")
+        traceback.print_exc()
+
 def main():
     # 创建会话
     session_id = create_session()
     print(f"创建会话: {session_id}")
     
     # 构建iframe URL
-    iframe_url = f'http://localhost:8000/static/iframe.html?session={session_id}'
+    iframe_url = f'{BASE_URL}/static/iframe.html?session={session_id}'
     
-    # 创建弹出式窗口
+    # 创建弹出式窗口，并添加脚本通知处理
     window = webview.create_window('验证码系统', iframe_url, width=400, height=500)
+    window.events.script_notify = on_script_notify
     
     # 在后台线程中检查状态
     status_thread = threading.Thread(target=check_session_status, args=(session_id, window))
